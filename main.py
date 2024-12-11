@@ -129,8 +129,12 @@ while True:
             blocks = blocks[0:index]+blocks[index+1:]+[generate_at(400)]
         
         if i.collide(player):
-            pygame.quit()
-            sys.exit()
+            hardmode = False
+            fps = 360
+            player = Player(-1,100,200)
+            velocity = -100/fps*player.slope
+            blocks = [generate_at(400+200*i) for i in range(20 if hardmode else 10)]
+            menu_mode = True
 
     if player.y <= 5:
         player.y = 5
