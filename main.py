@@ -53,9 +53,10 @@ hardmode = False
 fps = 360
 player = Player(-1,100,200)
 velocity = -100/fps*player.slope
-blocks = [generate_at(400+200*i) for i in range(20 if hardmode else 10)]
+blocks = [generate_at(400+100*i) for i in range(20 if hardmode else 10)]
 menu_mode = True
 hardmode_cooldown = 0
+fps_cooldown = 0
 
 title = font1.render("523.py", False, (255,255,255))
 titleRect = title.get_rect()
@@ -84,15 +85,20 @@ while True:
         blocks = [generate_at(400+200*i) for i in range(20 if hardmode else 10)]
         menu_mode = True
 
-    hardmode_cooldown -= 1
     if menu_mode and k[pygame.K_h] and hardmode_cooldown < 0:
         hardmode = not hardmode
         hardmode_cooldown = fps
     elif menu_mode and k[pygame.K_RETURN]: menu_mode = False
-    elif menu_mode and k[pygame.K_w]: fps += 1
-    elif menu_mode and k[pygame.K_s]: fps = max(fps - 1, 1)
+    elif menu_mode and k[pygame.K_w] and fps_cooldown < 0: 
+        fps += 1
+        fps_cooldown = fps / 4
+    elif menu_mode and k[pygame.K_s] and fps_cooldown < 0: 
+        fps = max(fps - 1, 1)
+        fps_cooldown = fps / 4
     
     if menu_mode:
+        hardmode_cooldown -= 1
+        fps_cooldown -= 1
         pygame.draw.rect(screen,(0,0,0),pygame.Rect(0,0,400,400),0)
         screen.blit(title,titleRect)
         hm = font2.render(f"Hardmode(H to toggle): {hardmode}", False, (255,255,255))
