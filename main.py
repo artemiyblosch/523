@@ -1,6 +1,7 @@
 import pygame
 import sys
 from random import randint
+import math
 
 def generate_at(x_b):
     if randint(0,10) == 1:
@@ -16,12 +17,29 @@ class Block:
         self.x_e = x_e
         self.y_e = y_e
     
-    def collide(self,player_y):
-        return self.x_b<100<self.x_e and self.y_b<player_y<self.y_e
+    def collide(self,player):
+        return self.x_b<player.x<self.x_e and self.y_b<player.y<self.y_e
 
     def draw(self,screen):
         pygame.draw.rect(screen,(0,0,0),\
             pygame.Rect(self.x_b,self.y_b,self.x_e - self.x_b,self.y_e - self.y_b))
+
+class Player:
+    def __init__(self,slope,x,y):
+        self.x = x
+        self.y = y
+        self.slope = slope
+        self.vslope = slope
+    
+    def update_slope(self):
+        self.vslope = self.slope
+
+    def draw(self,screen):
+        points = [(-5,-5),(5,0),(-5,5)]
+        angle = math.atan(self.vslope)
+        points  = [(math.cos(angle)*i[0] + math.sin(angle)*i[1], -math.sin(angle)*i[0] + math.cos(angle)*i[1]) for i in points]
+        points = [(i[0]+self.x,i[1]+self.y) for i in points]
+        pygame.draw.polygon(screen,(0,0,0),points)
 
 pygame.font.init()
 pygame.init()
@@ -32,12 +50,12 @@ font1 = pygame.font.Font('freesansbold.ttf', 32)
 font2 = pygame.font.Font('freesansbold.ttf', 12)
 
 hardmode = False
-slope = -1
 fps = 360
-player_y = 200
-velocity = -100/fps*slope
+player = Player(-1,100,200)
+velocity = -100/fps*player.slope
 blocks = [generate_at(400+200*i) for i in range(20 if hardmode else 10)]
 menu_mode = True
+hardmode_cooldown = 0
 
 title = font1.render("523.py", False, (255,255,255))
 titleRect = title.get_rect()
@@ -52,32 +70,48 @@ while True:
 
     k = pygame.key.get_pressed()
     if k[pygame.K_SPACE] or k[pygame.K_UP]:
-        velocity = 100/fps*slope
+        player.slope = 1
+        velocity = -100/fps*player.slope
     else:
-        velocity = -100/fps*slope
-    if menu_mode and k[pygame.K_h]:
+        player.slope = -1
+        velocity = -100/fps*player.slope
+    
+    if k[pygame.K_ESCAPE] and not menu_mode: 
+        hardmode = False
+        fps = 360
+        player = Player(-1,100,200)
+        velocity = -100/fps*player.slope
+        blocks = [generate_at(400+200*i) for i in range(20 if hardmode else 10)]
+        menu_mode = True
+
+    hardmode_cooldown -= 1
+    if menu_mode and k[pygame.K_h] and hardmode_cooldown < 0:
         hardmode = not hardmode
+        hardmode_cooldown = fps
     elif menu_mode and k[pygame.K_RETURN]: menu_mode = False
+    elif menu_mode and k[pygame.K_w]: fps += 1
+    elif menu_mode and k[pygame.K_s]: fps = max(fps - 1, 1)
     
     if menu_mode:
         pygame.draw.rect(screen,(0,0,0),pygame.Rect(0,0,400,400),0)
         screen.blit(title,titleRect)
         hm = font2.render(f"Hardmode(H to toggle): {hardmode}", False, (255,255,255))
-        hmRect = title.get_rect()
+        hmRect = hm.get_rect()
         hmRect.center = (200,150)
         screen.blit(hm,hmRect)
+        fm = font2.render(f"FPS(W to increase,S to decrease): {fps}", False, (255,255,255))
+        fmRect = fm.get_rect()
+        fmRect.center = (200,200)
+        screen.blit(fm,fmRect)
         pygame.display.flip()
         continue
 
-    player_y += velocity
+    player.y += velocity
     pygame.draw.rect(screen,(255,255,255),pygame.Rect(0,0,400,400),0)
-    if velocity == 0:
-        pygame.draw.polygon(screen,(0,0,0),[(95,player_y-5),(105,player_y),(95,player_y+5)])
-    elif velocity > 0:
-        pygame.draw.polygon(screen,(0,0,0),[(92,player_y+3),(98,player_y - 3),(95+7,player_y+7)])
-    elif velocity < 0:
-        pygame.draw.polygon(screen,(0,0,0),[(92,player_y-3),(95+7,player_y - 7),(98,player_y+3)])
-    
+
+    player.draw(screen)
+    player.update_slope()
+
     for index,i in enumerate(blocks):
         i.x_b -= 100/fps
         i.x_e -= 100/fps
@@ -88,16 +122,18 @@ while True:
         elif i.x_e < 0:
             blocks = blocks[0:index]+blocks[index+1:]+[generate_at(400)]
         
-        if i.collide(player_y):
+        if i.collide(player):
             pygame.quit()
             sys.exit()
 
-    if player_y <= 5:
-        player_y = 5
+    if player.y <= 5:
+        player.y = 5
+        player.vslope = 0
         on_ground += 1/fps
         velocity = 0
-    elif player_y >= 395: 
-        player_y = 395
+    elif player.y >= 395: 
+        player.y = 395
+        player.vslope = 0
         on_ground += 1/fps
         velocity = 0
     
