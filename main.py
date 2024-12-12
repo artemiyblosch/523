@@ -51,7 +51,7 @@ while True:
         hardmode_cooldown = fps
     elif menu_mode and k[pygame.K_RETURN]: 
         menu_mode = False
-        objects = [Player(-1,100,200,0)] + flat([generate_at(400+(100 if hardmode else 200)*i, hardmode) for i in range(70 if hardmode else 40)])
+        objects = [Player(-1,100,200,0)] + flat([generate_at(400+(150 if hardmode else 200)*i, hardmode) for i in range(70 if hardmode else 40)])
     elif menu_mode and k[pygame.K_w] and fps_cooldown < 0: 
         fps += 1
         fps_cooldown = fps / 4
